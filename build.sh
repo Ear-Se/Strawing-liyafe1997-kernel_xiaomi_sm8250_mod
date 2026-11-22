@@ -6,6 +6,11 @@
 set -e
 set -o pipefail
 
+# ====== 在下面引号内粘贴你刚才复制的 64 位 SHA256（大小 22613471 已填好） ======
+export SPOOFED_SHA256="把刚才复制的64位SHA256粘贴到这里"
+export SPOOFED_SIZE="22613471"
+# ==============================================================================
+
 TOOLCHAIN_PATH=$HOME/proton-clang/proton-clang-20210522/bin
 GIT_COMMIT_ID=$(git rev-parse --short=8 HEAD)
 TARGET_DEVICE=$1
@@ -94,10 +99,34 @@ if [ $KSU_ENABLE -eq 1 ]; then
         exit 1
     fi
 
+    # Auto-inject spoofed manager signature and size into apk_sign.c
+    python3 - << 'EOF'
+import glob, os, re
+
+sig = os.environ.get("SPOOFED_SHA256", "").strip().lower()
+sz = os.environ.get("SPOOFED_SIZE", "").strip()
+
+files = glob.glob("drivers/kernelsu/**/apk_sign.c", recursive=True) + glob.glob("KernelSU/**/apk_sign.c", recursive=True)
+for p in files:
+    txt = open(p, encoding="utf-8", errors="ignore").read()
+    print(f"=== BEFORE {p} ===")
+    for i, line in enumerate(txt.splitlines(), 1):
+        if any(k in line for k in ("EXPECTED_", "signature", "hash", "size", "0x", "5749")):
+            print(f"{i}: {line}")
+    if re.fullmatch(r"[0-9a-f]{64}", sig):
+        new_txt = re.sub(r'(["\'])[0-9a-fA-F]{64}(["\'])', rf'\g<1>{sig}\g<2>', txt)
+        if sz.isdigit():
+            new_txt = re.sub(r'(#define\s+EXPECTED_SIZE\s+)(0x[0-9a-fA-F]+|\d+)', rf'\g<1>{sz}', new_txt)
+        open(p, "w", encoding="utf-8").write(new_txt)
+        print(f"Patched {p}: changed={new_txt != txt}")
+    else:
+        print("WARNING: SPOOFED_SHA256 is not a valid 64-char hex string, skipped replacement.")
+EOF
+
     # Auto-inject sys_reboot manual hook for SukiSU-Nova v3.0.0+ if missing
     if ! grep -q "ksu_handle_sys_reboot" kernel/reboot.c; then
         echo "Injecting ksu_handle_sys_reboot hook into kernel/reboot.c..."
-        python3 -c '
+        python3 - << 'EOF'
 with open("kernel/reboot.c", "r") as f:
     content = f.read()
 
@@ -118,7 +147,7 @@ if target in content:
     print("Successfully injected ksu_handle_sys_reboot.")
 else:
     print("WARNING: Could not match SYSCALL_DEFINE4(reboot) in kernel/reboot.c")
-'
+EOF
     fi
 else
     echo "KSU is disabled"
@@ -201,6 +230,8 @@ make $MAKE_ARGS ${TARGET_DEVICE}_defconfig
 if [ $KSU_ENABLE -eq 1 ]; then
     scripts/config --file out/.config \
     -e KPROBES \
+    -d KPROBE_EVENTS \
+    -d UPROBE_EVENTS \
     -e EXT4_FS \
     -e KSU \
     -e KSU_MANUAL_HOOK \
@@ -215,7 +246,7 @@ if [ $KSU_ENABLE -eq 1 ]; then
     -e KSU_SUSFS_TRY_UMOUNT \
     -e KSU_SUSFS_AUTO_ADD_TRY_UMOUNT_FOR_BIND_MOUNT \
     -e KSU_SUSFS_SPOOF_UNAME \
-    -e KSU_SUSFS_ENABLE_LOG \
+    -d KSU_SUSFS_ENABLE_LOG \
     -e KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS \
     -e KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG \
     -d KSU_SUSFS_OPEN_REDIRECT \
@@ -262,7 +293,7 @@ if [ $KSU_ENABLE -eq 1 ]; then
         exit 1
     fi
     echo "Verified: CONFIG_KSU=y is active in out/.config"
-    grep -E "CONFIG_KSU|CONFIG_KPM|CONFIG_KPROBES" out/.config || true
+    grep -E "CONFIG_KSU|CONFIG_KPM|CONFIG_KPROBES|CONFIG_KPROBE_EVENTS|CONFIG_UPROBE_EVENTS" out/.config || true
 fi
 
 make $MAKE_ARGS -j$(nproc)
