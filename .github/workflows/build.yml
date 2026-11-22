@@ -1,0 +1,34 @@
+name: Build Xiaomi 10 SukiSU-Nova Kernel
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout kernel source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc bison build-essential ccache curl flex git libssl-dev libelf-dev python3 zip wget
+          sudo ln -sf /usr/lib/x86_64-linux-gnu/libtinfo.so.6 /usr/lib/x86_64-linux-gnu/libtinfo.so.5
+
+      - name: Setup Proton Clang toolchain
+        run: |
+          mkdir -p $HOME/proton-clang
+          git clone --depth=1 https://github.com/kdrag0n/proton-clang.git $HOME/proton-clang/proton-clang-20210522
+
+      - name: Build kernel for umi with SukiSU-Nova
+        run: |
+          bash build.sh umi ksu
+
+      - name: Upload MIUI and AOSP kernel zips
+        uses: actions/upload-artifact@v4
+        with:
+          name: Xiaomi10-umi-SukiSU-Nova
+          path: Kernel_*_umi_*.zip
