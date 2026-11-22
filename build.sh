@@ -95,7 +95,7 @@ echo "TARGET_DEVICE: $TARGET_DEVICE"
 
 if [ $KSU_ENABLE -eq 1 ]; then
     echo "KSU is enabled"
-    curl -LSs "https://github.com/liyafe1997/SukiSU-Ultra/raw/4ff14cf0051d04209c4abd5027d99d8e7780ef5b/kernel/setup.sh" | bash -s f4863b20cc8dc0f8cc67418980f022e43014b598
+    curl -LSs "https://raw.githubusercontent.com/SukiSU-Nova/SukiSU-Nova/main/kernel/setup.sh" | bash -s main f4863b20cc8dc0f8cc67418980f022e43014b598
 else
     echo "KSU is disabled"
 fi
@@ -125,7 +125,7 @@ if [ $KSU_ENABLE -eq 1 ]; then
     -e KSU \
     -e KSU_MANUAL_HOOK \
     -e KSU_SUSFS_HAS_MAGIC_MOUNT \
-    -d KSU_SUSFS_SUS_PATH \
+    -e KSU_SUSFS_SUS_PATH \
     -e KSU_SUSFS_SUS_MOUNT \
     -e KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT \
     -e KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT \
@@ -139,7 +139,7 @@ if [ $KSU_ENABLE -eq 1 ]; then
     -e KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG \
     -d KSU_SUSFS_OPEN_REDIRECT \
     -d KSU_SUSFS_SUS_SU \
-    -e KPM
+    -d KPM
 else
     scripts/config --file out/.config -d KSU
 fi
@@ -162,15 +162,15 @@ rm -rf anykernel/kernels/
 mkdir -p anykernel/kernels/
 
 # Patch for SukiSU KPM support. 
-if [ $KSU_ENABLE -eq 1 ]; then
-    cd out/arch/arm64/boot/
-    wget https://github.com/SukiSU-Ultra/SukiSU_KernelPatch_patch/releases/download/0.12.0/patch_linux
-    chmod +x patch_linux
-    ./patch_linux
-    rm Image
-    mv oImage Image
-    cd -
-fi
+# if [ $KSU_ENABLE -eq 1 ]; then
+#     cd out/arch/arm64/boot/
+#     wget https://github.com/SukiSU-Ultra/SukiSU_KernelPatch_patch/releases/download/0.12.0/patch_linux
+#     chmod +x patch_linux
+#     ./patch_linux
+#     rm Image
+#     mv oImage Image
+#     cd -
+# fi
 
 cp out/arch/arm64/boot/Image anykernel/kernels/
 cp out/arch/arm64/boot/dtb anykernel/kernels/
@@ -264,7 +264,7 @@ if [ $KSU_ENABLE -eq 1 ]; then
     -e KSU \
     -e KSU_MANUAL_HOOK \
     -e KSU_SUSFS_HAS_MAGIC_MOUNT \
-    -d KSU_SUSFS_SUS_PATH \
+    -e KSU_SUSFS_SUS_PATH \
     -e KSU_SUSFS_SUS_MOUNT \
     -e KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT \
     -e KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT \
@@ -278,7 +278,7 @@ if [ $KSU_ENABLE -eq 1 ]; then
     -e KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG \
     -d KSU_SUSFS_OPEN_REDIRECT \
     -d KSU_SUSFS_SUS_SU \
-    -e KPM
+    -d KPM
 else
     scripts/config --file out/.config -d KSU
 fi
@@ -336,15 +336,15 @@ rm -rf anykernel/kernels/
 mkdir -p anykernel/kernels/
 
 # Patch for SukiSU KPM support. 
-if [ $KSU_ENABLE -eq 1 ]; then
-    cd out/arch/arm64/boot/
-    wget https://github.com/SukiSU-Ultra/SukiSU_KernelPatch_patch/releases/download/0.12.0/patch_linux
-    chmod +x patch_linux
-    ./patch_linux
-    rm Image
-    mv oImage Image
-    cd -
-fi
+#  if [ $KSU_ENABLE -eq 1 ]; then
+#     cd out/arch/arm64/boot/
+#     wget https://github.com/SukiSU-Ultra/SukiSU_KernelPatch_patch/releases/download/0.12.0/patch_linux
+#     chmod +x patch_linux
+#     ./patch_linux
+#     rm Image
+#     mv oImage Image
+#     cd -
+# fi
 
 cp out/arch/arm64/boot/Image anykernel/kernels/
 cp out/arch/arm64/boot/dtb anykernel/kernels/
