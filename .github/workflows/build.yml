@@ -22,6 +22,7 @@ jobs:
         run: |
           mkdir -p $HOME/proton-clang
           git clone --depth=1 https://github.com/kdrag0n/proton-clang.git $HOME/proton-clang/proton-clang-20210522
+          rm -f $HOME/proton-clang/proton-clang-20210522/bin/ld $HOME/proton-clang/proton-clang-20210522/bin/ld.bfd $HOME/proton-clang/proton-clang-20210522/bin/as
 
       - name: Build kernel for umi with SukiSU-Nova
         run: |
