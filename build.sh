@@ -87,11 +87,7 @@ echo "TARGET_DEVICE: $TARGET_DEVICE"
 if [ $KSU_ENABLE -eq 1 ]; then
     echo "KSU is enabled - integrating SukiSU-Nova with SUSFS..."
     rm -rf KernelSU drivers/kernelsu
-    if ! curl -fsSL "https://raw.githubusercontent.com/SukiSU-Nova/SukiSU-Nova/susfs-main/kernel/setup.sh" | bash -s susfs-main; then
-        echo "susfs-main branch setup failed, falling back to main..."
-        rm -rf KernelSU drivers/kernelsu
-        curl -fsSL "https://raw.githubusercontent.com/SukiSU-Nova/SukiSU-Nova/main/kernel/setup.sh" | bash -s main
-    fi
+    curl -fsSL "https://raw.githubusercontent.com/SukiSU-Nova/SukiSU-Nova/main/kernel/setup.sh" | bash -s main
 
     if [ ! -d "drivers/kernelsu" ]; then
         echo "ERROR: drivers/kernelsu directory was not created! Aborting build."
@@ -204,6 +200,8 @@ make $MAKE_ARGS ${TARGET_DEVICE}_defconfig
 
 if [ $KSU_ENABLE -eq 1 ]; then
     scripts/config --file out/.config \
+    -e KPROBES \
+    -e EXT4_FS \
     -e KSU \
     -e KSU_MANUAL_HOOK \
     -e KSU_SUSFS \
@@ -264,7 +262,7 @@ if [ $KSU_ENABLE -eq 1 ]; then
         exit 1
     fi
     echo "Verified: CONFIG_KSU=y is active in out/.config"
-    grep -E "CONFIG_KSU|CONFIG_KPM" out/.config || true
+    grep -E "CONFIG_KSU|CONFIG_KPM|CONFIG_KPROBES" out/.config || true
 fi
 
 make $MAKE_ARGS -j$(nproc)
